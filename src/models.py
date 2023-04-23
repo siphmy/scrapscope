@@ -41,6 +41,9 @@ def sentence_transformer_model(name: str):
         def dimensions(self) -> int:
             return self.model.get_sentence_embedding_dimension()
 
+        def preload(self):
+            self.model
+
         def encode(self, sentences: Iterable[str]) -> Iterator[Vector]:
             for batch in batched(sentences, self.batch_size):
                 for embedding in self.model.encode(batch):

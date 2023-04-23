@@ -20,6 +20,9 @@ class Model(Protocol):
     def dimensions(self) -> int:
         ...
 
+    def preload(self):
+        ...
+
     def encode(self, sentences: Iterable[str]) -> Iterator[Vector]:
         ...
 

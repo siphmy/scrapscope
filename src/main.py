@@ -11,6 +11,8 @@ def sync(*, args: Namespace, idx: index.Index):
 
 
 def search(*, args: Namespace, idx: index.Index):
+    idx.model.preload()
+
     while True:
         try:
             prompt = input("query > ")
