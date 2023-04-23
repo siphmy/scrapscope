@@ -52,6 +52,7 @@ class Qdrant:
 def hit_from_qdrant(hit: ScoredPoint) -> index.Hit:
     assert hit.payload is not None
     doc = index.Document(
+        kind=hit.payload["kind"],
         page_title=hit.payload["page_title"],
         content=hit.payload["content"],
     )

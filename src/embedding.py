@@ -35,7 +35,7 @@ class LineEncoder:
     def encode(self, *, force=False) -> Iterator[Vector]:
         model_dir = self.model.identifier.replace("/", "_")
         cache_dir = path.join(config.cache_dir, self.project.hash, model_dir)
-        cache_file = path.join(cache_dir, "embeddings.bin")
+        cache_file = path.join(cache_dir, "lines.bin")
 
         shape = (self.project.count_lines(), self.model.dimensions)
 
@@ -50,6 +50,30 @@ class LineEncoder:
         for page in self.project.pages():
             for line in page.lines():
                 yield f"{page.title}; {line}"
+
+
+@dataclass
+class PageEncoder:
+    model: Model
+    project: scrapbox.Project
+
+    def encode(self, *, force=False) -> Iterator[Vector]:
+        model_dir = self.model.identifier.replace("/", "_")
+        cache_dir = path.join(config.cache_dir, self.project.hash, model_dir)
+        cache_file = path.join(cache_dir, "pages.bin")
+
+        shape = (self.project.count_pages(), self.model.dimensions)
+
+        with_memmap = cached_memmapper(file=cache_file, shape=shape, ignore=force)
+        return with_memmap(self._embeddings)
+
+    def _embeddings(self):
+        sentences = self._enumerate_sentences()
+        return self.model.encode(tqdm(sentences))
+
+    def _enumerate_sentences(self) -> Iterator[str]:
+        for page in self.project.pages():
+            yield " ".join(list(page.lines()))
 
 
 T = TypeVar("T")

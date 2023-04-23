@@ -19,7 +19,10 @@ def search(*, args: Namespace, idx: index.Index):
             hits = idx.query(prompt)
             for hit in hits:
                 doc = hit.document
-                print(f"[{hit.score:.04f}] {doc.page_title}: {doc.content}")
+                if doc.kind == "line":
+                    print(f"[{hit.score:.04f}] {doc.page_title}: {doc.content}")
+                else:
+                    print(f"[{hit.score:.04f}] {doc.page_title}")
         except (EOFError, KeyboardInterrupt):
             break
 

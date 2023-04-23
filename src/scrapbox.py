@@ -40,6 +40,9 @@ class Project:
                 page.persistent()
                 yield Page(title=page["title"], raw_lines=page["lines"])
 
+    def count_pages(self) -> int:
+        return sum(1 for _ in self.pages())
+
     def count_lines(self) -> int:
         "counts non-empty lines"
 
