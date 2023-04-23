@@ -2,7 +2,7 @@ import argparse
 import sys
 from argparse import ArgumentError, ArgumentParser, Namespace
 
-from . import config, database, embedding, index, scrapbox
+from . import config, database, index, models, scrapbox
 
 
 def sync(*, args: Namespace, idx: index.Index):
@@ -64,7 +64,7 @@ if __name__ == "__main__":
         port=config.qdrant_port,
         collection=config.qdrant_collection,
     )
-    model = embedding.STParaphraseMultilingualMiniLmL12V2()
+    model = models.STParaphraseMultilingualMiniLmL12V2()
     idx = index.Index(db=db, model=model)
 
     args.handler(args=args, idx=idx)

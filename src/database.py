@@ -7,7 +7,7 @@ from qdrant_client.conversions.common_types import ScoredPoint
 from qdrant_client.models import VectorParams
 
 from . import index
-from .embedding import Vector
+from .models import Vector
 
 
 @dataclass

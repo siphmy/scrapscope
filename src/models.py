@@ -9,19 +9,6 @@ from .utils import batched
 Vector = List[float]
 
 
-class Model(Protocol):
-    @property
-    def identifier(self) -> str:
-        ...
-
-    @property
-    def dimensions(self) -> int:
-        ...
-
-    def encode(self, sentences: Iterable[str]) -> Iterator[Vector]:
-        ...
-
-
 class STModelManager:
     def __init__(self) -> None:
         self.models = dict()

@@ -6,9 +6,9 @@ from typing import Iterable, Iterator, Protocol
 import numpy as np
 from tqdm import tqdm
 
-from . import config, embedding, scrapbox
-from .embedding import Vector
+from . import config, scrapbox
 from .logging import logger
+from .models import Vector
 
 
 @dataclass
@@ -34,10 +34,23 @@ class Database(Protocol):
         ...
 
 
+class Model(Protocol):
+    @property
+    def identifier(self) -> str:
+        ...
+
+    @property
+    def dimensions(self) -> int:
+        ...
+
+    def encode(self, sentences: Iterable[str]) -> Iterator[Vector]:
+        ...
+
+
 @dataclass
 class Index:
     db: Database
-    model: embedding.Model
+    model: Model
 
     def index(self, project: scrapbox.Project, *, force=False):
         self.db.reset(dimensions=self.model.dimensions)
