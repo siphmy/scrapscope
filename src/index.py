@@ -1,3 +1,4 @@
+import os
 from dataclasses import dataclass
 from os import path
 from typing import Iterable, Iterator, Protocol
@@ -50,7 +51,11 @@ class Index:
         return self.db.query(vector)
 
     def embeddings(self, project: scrapbox.Project, *, force=False) -> Iterator[Vector]:
-        cache_file = path.join(config.cache_dir, f"{project.hash}.bin")
+        model_dir = self.model.identifier.replace("/", "_")
+        cache_dir = path.join(config.cache_dir, project.hash, model_dir)
+        os.makedirs(cache_dir, exist_ok=True)
+        cache_file = path.join(cache_dir, "embeddings.bin")
+
         shape = (project.count_lines(), self.model.dimensions)
 
         if path.exists(cache_file) and not force:

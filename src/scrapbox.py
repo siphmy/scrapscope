@@ -48,4 +48,4 @@ class Project:
     @cached_property
     def hash(self):
         with open(self.file, "rb") as f:
-            return file_digest(f, "blake2b").hexdigest()[:8]
+            return file_digest(f, "blake2b").hexdigest()[:16]

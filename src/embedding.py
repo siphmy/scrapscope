@@ -12,6 +12,10 @@ Vector = List[float]
 
 class Model(Protocol):
     @property
+    def identifier(self) -> str:
+        ...
+
+    @property
     def dimensions(self) -> int:
         ...
 
@@ -42,6 +46,10 @@ def sentence_transformer_model(name: str):
         @property
         def model(self):
             return st_models.load(name)
+
+        @property
+        def identifier(self) -> str:
+            return name
 
         @property
         def dimensions(self) -> int:
