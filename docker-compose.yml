@@ -1,0 +1,9 @@
+version: '3'
+
+services:
+  qdrant:
+    image: qdrant/qdrant:v1.1.1
+    volumes:
+      - ./data/qdrant:/qdrant/storage
+    ports:
+      - 6333:6333
