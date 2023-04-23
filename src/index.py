@@ -34,11 +34,11 @@ class Index:
     model: embedding.Model
 
     def index(self, project: scrapbox.Project, *, force=False):
-        encoder = embedding.Encoder(model=self.model)
+        encoder = embedding.LineEncoder(model=self.model, project=project)
 
         self.db.reset(dimensions=self.model.dimensions)
         self.db.index(
-            vectors=encoder.encode(project, force=force),
+            vectors=encoder.encode(force=force),
             documents=documents(project),
         )
 

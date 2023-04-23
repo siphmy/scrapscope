@@ -1,7 +1,7 @@
 import os
 from dataclasses import dataclass
 from os import path
-from typing import Iterable, Iterator, Protocol
+from typing import Callable, Iterable, Iterator, List, Protocol, TypeVar
 
 import numpy as np
 from tqdm import tqdm
@@ -25,40 +25,60 @@ class Model(Protocol):
 
 
 @dataclass
-class Encoder:
+class LineEncoder:
     model: Model
+    project: scrapbox.Project
 
-    def encode(self, project: scrapbox.Project, *, force=False) -> Iterator[Vector]:
+    def encode(self, *, force=False) -> Iterator[Vector]:
         model_dir = self.model.identifier.replace("/", "_")
-        cache_dir = path.join(config.cache_dir, project.hash, model_dir)
-        os.makedirs(cache_dir, exist_ok=True)
+        cache_dir = path.join(config.cache_dir, self.project.hash, model_dir)
         cache_file = path.join(cache_dir, "embeddings.bin")
 
-        shape = (project.count_lines(), self.model.dimensions)
+        shape = (self.project.count_lines(), self.model.dimensions)
 
-        if path.exists(cache_file) and not force:
-            logger.info(f"using embeddings from cache (hash: {project.hash})")
+        with_memmap = cached_memmapper(file=cache_file, shape=shape, ignore=force)
+        return with_memmap(self._embeddings)
+
+    def _embeddings(self):
+        sentences = self._enumerate_sentences()
+        return self.model.encode(tqdm(sentences))
+
+    def _enumerate_sentences(self) -> Iterator[str]:
+        for page in self.project.pages():
+            for line in page.lines():
+                yield f"{page.title}; {line}"
+
+
+T = TypeVar("T")
+
+
+def cached_memmapper(
+    *,
+    file: str,
+    shape: tuple[int, ...],
+    ignore: bool = False,
+) -> Callable[[Callable[[], Iterable[List[T]]]], Iterator[List[T]]]:
+    def with_memmap(fn: Callable[[], Iterable[List[T]]]) -> Iterator[List[T]]:
+        dir = path.dirname(file)
+        os.makedirs(dir, exist_ok=True)
+
+        if path.exists(file) and not ignore:
+            logger.info(f"using cache (path: {file})")
         else:
-            if force:
-                logger.info("ignoring embeddings cache")
+            if ignore:
+                logger.info("ignoring cache")
             else:
-                logger.info(f"no embeddings cache found (hash: {project.hash})")
+                logger.info(f"no cache found (path: {file})")
 
-            sentences = enumerate_sentences(project)
-            embeddings = self.model.encode(tqdm(sentences))
-
-            mm = np.memmap(cache_file, mode="w+", dtype="float32", shape=shape)
-            for i, embedding in enumerate(embeddings):
-                mm[i] = embedding
+            mm = np.memmap(file, mode="w+", dtype="float32", shape=shape)
+            iter = fn()
+            for i, item in enumerate(iter):
+                mm[i] = item
 
             mm.flush()
 
-        mm = np.memmap(cache_file, mode="r", dtype="float32", shape=shape)
-        for vector in mm:
-            yield vector.tolist()
+        mm = np.memmap(file, mode="r", dtype="float32", shape=shape)
+        for item in mm:
+            yield item.tolist()
 
-
-def enumerate_sentences(project: scrapbox.Project) -> Iterator[str]:
-    for page in project.pages():
-        for line in page.lines():
-            yield f"{page.title}; {line}"
+    return with_memmap
