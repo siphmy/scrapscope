@@ -2,7 +2,6 @@ from dataclasses import dataclass
 from typing import Any, Iterable, Iterator, List, Protocol
 
 from sentence_transformers import SentenceTransformer  # type: ignore
-from tqdm import tqdm
 
 from .logging import logger
 from .utils import batched
