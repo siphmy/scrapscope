@@ -40,7 +40,7 @@
 docker compose up
 ```
 
-#### Sync project
+#### Sync
 
 ```shell
 ./scrapscope sync <path to project.json>
@@ -48,16 +48,16 @@ docker compose up
 
 > **Note**
 >
-> The filename without extension will be adopted as its corresponding index name.
-> e.g. the index for `foo/bar.json` will be named `bar`.
+> The filename without extension will be adopted as its corresponding project name.
+> e.g. the project name for `foo/bar.json` will be `bar`.
 
 #### Search
 
 ```shell
-./scrapscope search <index>
+./scrapscope search <project>
 ```
 
-#### List indices
+#### List projects
 
 ```shell
 ./scrapscope list
