@@ -40,10 +40,10 @@
 docker compose up
 ```
 
-#### Sync
+#### Import
 
 ```shell
-./scrapscope sync <path to project.json>
+./scrapscope import <path to project.json>
 ```
 
 > **Note**
