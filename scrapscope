@@ -2,7 +2,4 @@
 
 set -e
 
-# shellcheck disable=SC1091
-. .venv/bin/activate
-
 exec python -m src.main "$@"
