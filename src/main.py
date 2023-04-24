@@ -6,7 +6,7 @@ from os import path
 from . import config, database, embedding, index, models, scrapbox
 
 
-def sync(*, args: Namespace, db: index.Database, model: embedding.Model):
+def run_sync(*, args: Namespace, db: index.Database, model: embedding.Model):
     (index_name, _) = path.splitext(path.basename(args.file))
     idx = index.Index(name=index_name, db=db, model=model)
     project = scrapbox.Project(file=args.file)
@@ -14,7 +14,7 @@ def sync(*, args: Namespace, db: index.Database, model: embedding.Model):
     idx.index(project, force=args.force)
 
 
-def search(*, args: Namespace, db: index.Database, model: embedding.Model):
+def run_search(*, args: Namespace, db: index.Database, model: embedding.Model):
     idx = index.Index(name=args.index, db=db, model=model)
     idx.model.preload()
 
@@ -55,14 +55,14 @@ def arg_parser():
         dest="force",
         action=argparse.BooleanOptionalAction,
     )
-    parser_sync.set_defaults(handler=sync)
+    parser_sync.set_defaults(handler=run_sync)
 
     parser_search = subparsers.add_parser(
         "search",
         description="launch interactive prompt for searching pages",
     )
     parser_search.add_argument("index")
-    parser_search.set_defaults(handler=search)
+    parser_search.set_defaults(handler=run_search)
 
     parser_list = subparsers.add_parser(
         "list",
