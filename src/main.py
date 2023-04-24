@@ -85,6 +85,6 @@ if __name__ == "__main__":
         host=config.qdrant_host,
         port=config.qdrant_port,
     )
-    model = models.STParaphraseMultilingualMiniLmL12V2()
+    model = models.STMultiQaMiniLmL6CosV1()
 
     args.handler(args=args, db=db, model=model)
