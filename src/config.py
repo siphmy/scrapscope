@@ -5,4 +5,3 @@ cache_dir = os.environ.get("CACHE_DIR", "cache")
 
 qdrant_host = os.environ.get("QDRANT_HOST", "localhost")
 qdrant_port = int(os.environ.get("QDRANT_PORT", "6333"), base=10)
-qdrant_collection = os.environ.get("QDRANT_COLLECTION", "scrapbox")

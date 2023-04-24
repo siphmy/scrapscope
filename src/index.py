@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Iterable, Iterator, Literal, Optional, Protocol, Union
+from typing import Iterable, Iterator, List, Literal, Optional, Protocol, Union
 
 from . import embedding, scrapbox
 from .models import Vector
@@ -19,13 +19,22 @@ class Hit:
 
 
 class Database(Protocol):
-    def query(self, vector: Vector) -> Iterator[Hit]:
+    def indices(self) -> List[str]:
         ...
 
-    def index(self, *, vectors: Iterable[Vector], documents: Iterable[Document]):
+    def query(self, *, index: str, vector: Vector) -> Iterator[Hit]:
         ...
 
-    def reset(self, *, dimensions: int):
+    def index(
+        self,
+        *,
+        index: str,
+        vectors: Iterable[Vector],
+        documents: Iterable[Document],
+    ):
+        ...
+
+    def reset(self, *, index: str, dimensions: int):
         ...
 
 
@@ -33,25 +42,28 @@ class Database(Protocol):
 class Index:
     db: Database
     model: embedding.Model
+    name: str
 
     def index(self, project: scrapbox.Project, *, force=False):
-        self.db.reset(dimensions=self.model.dimensions)
+        self.db.reset(index=self.name, dimensions=self.model.dimensions)
 
         line_encoder = embedding.LineEncoder(model=self.model, project=project)
         self.db.index(
+            index=self.name,
             vectors=line_encoder.encode(force=force),
             documents=line_documents(project),
         )
 
         page_encoder = embedding.PageEncoder(model=self.model, project=project)
         self.db.index(
+            index=self.name,
             vectors=page_encoder.encode(force=force),
             documents=page_documents(project),
         )
 
     def query(self, prompt: str) -> Iterator[Hit]:
         vector = next(self.model.encode([prompt]))
-        return self.db.query(vector)
+        return self.db.query(index=self.name, vector=vector)
 
 
 def line_documents(project: scrapbox.Project) -> Iterator[Document]:

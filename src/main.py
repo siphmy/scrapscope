@@ -1,16 +1,21 @@
 import argparse
 import sys
 from argparse import ArgumentError, ArgumentParser, Namespace
+from os import path
 
-from . import config, database, index, models, scrapbox
+from . import config, database, embedding, index, models, scrapbox
 
 
-def sync(*, args: Namespace, idx: index.Index):
+def sync(*, args: Namespace, db: index.Database, model: embedding.Model):
+    (index_name, _) = path.splitext(path.basename(args.file))
+    idx = index.Index(name=index_name, db=db, model=model)
     project = scrapbox.Project(file=args.file)
+
     idx.index(project, force=args.force)
 
 
-def search(*, args: Namespace, idx: index.Index):
+def search(*, args: Namespace, db: index.Database, model: embedding.Model):
+    idx = index.Index(name=args.index, db=db, model=model)
     idx.model.preload()
 
     while True:
@@ -25,6 +30,11 @@ def search(*, args: Namespace, idx: index.Index):
                     print(f"[{hit.score:.04f}] {doc.page_title}")
         except (EOFError, KeyboardInterrupt):
             break
+
+
+def run_list(*, args: Namespace, db: index.Database, model: embedding.Model):
+    for idx in db.indices():
+        print(idx)
 
 
 def arg_parser():
@@ -51,7 +61,14 @@ def arg_parser():
         "search",
         description="launch interactive prompt for searching pages",
     )
+    parser_search.add_argument("index")
     parser_search.set_defaults(handler=search)
+
+    parser_list = subparsers.add_parser(
+        "list",
+        description="list indices",
+    )
+    parser_list.set_defaults(handler=run_list)
 
     return parser
 
@@ -67,9 +84,7 @@ if __name__ == "__main__":
     db = database.Qdrant(
         host=config.qdrant_host,
         port=config.qdrant_port,
-        collection=config.qdrant_collection,
     )
     model = models.STParaphraseMultilingualMiniLmL12V2()
-    idx = index.Index(db=db, model=model)
 
-    args.handler(args=args, idx=idx)
+    args.handler(args=args, db=db, model=model)
