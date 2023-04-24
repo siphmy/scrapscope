@@ -4,7 +4,7 @@ from typing import Iterable, Iterator, List
 
 from qdrant_client import QdrantClient
 from qdrant_client.conversions.common_types import ScoredPoint
-from qdrant_client.models import VectorParams
+from qdrant_client.models import Distance, VectorParams
 
 from . import index
 from .models import Vector
@@ -54,7 +54,7 @@ class Qdrant:
     def reset(self, *, index: str, dimensions: int):
         self.client.recreate_collection(
             collection_name=index,
-            vectors_config=VectorParams(size=dimensions, distance="Cosine"),  # type: ignore
+            vectors_config=VectorParams(size=dimensions, distance=Distance.COSINE),
         )
 
 
