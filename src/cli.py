@@ -1,7 +1,13 @@
 import argparse
+import math
 import sys
+import urllib.parse
+import webbrowser
 from argparse import ArgumentError, ArgumentParser, Namespace
+from dataclasses import dataclass
+from functools import cached_property
 from os import path
+from typing import List, Optional
 
 from . import config, database, embedding, index, models, scrapbox
 
@@ -18,23 +24,105 @@ def run_search(*, args: Namespace, db: index.Database, model: embedding.Model):
     idx = index.Index(project=args.project, db=db, model=model)
     idx.model.preload()
 
-    while True:
-        try:
-            prompt = input("query > ")
-            hits = idx.query(prompt)
-            for hit in hits:
-                doc = hit.document
-                if doc.kind == "line":
-                    print(f"[{hit.score:.04f}] {doc.page_title}: {doc.content}")
-                else:
-                    print(f"[{hit.score:.04f}] {doc.page_title}")
-        except (EOFError, KeyboardInterrupt):
-            break
+    CliSearcher(idx=idx).run()
 
 
 def run_list(*, args: Namespace, db: index.Database, model: embedding.Model):
     for idx in db.indices():
         print(idx)
+
+
+@dataclass
+class CliSearcher:
+    idx: index.Index
+
+    limit: int = config.default_limit
+    last_hits: Optional[List[index.Hit]] = None
+
+    def run(self):
+        while True:
+            try:
+                prompt = input("query > ")
+                if prompt.startswith("/"):
+                    self.execute(prompt[1:].split())
+                else:
+                    self.query(prompt)
+            except (EOFError, KeyboardInterrupt):
+                break
+
+    def query(self, prompt: str):
+        hits = list(self.idx.query(prompt, limit=self.limit))
+        digits = math.floor(math.log10(len(hits))) + 1
+        for i, hit in enumerate(hits):
+            print(f"{i+1:0{digits}d}: [{hit.score:.04f}]", end=" ")
+
+            doc = hit.document
+            if doc.kind == "line":
+                print(f"{doc.page_title}: {doc.content}")
+            else:
+                print(f"{doc.page_title}")
+
+        self.last_hits = hits
+
+    def execute(self, command: List[str]):
+        try:
+            args = self.command_parser.parse_args(command)
+            if "handler" in args:
+                args.handler(args)
+            else:
+                print("no command specified", file=sys.stderr)
+        except ArgumentError:
+            self.command_parser.print_help()
+        except SystemExit:
+            pass
+
+    @cached_property
+    def command_parser(self) -> ArgumentParser:
+        parser = ArgumentParser("(repl)", add_help=False)
+        subparsers = parser.add_subparsers(required=True)
+
+        parser_open = subparsers.add_parser("open", add_help=False)
+        parser_open.add_argument("index", type=int, nargs="?", default=1)
+        parser_open.set_defaults(handler=self.exec_open)
+
+        parser_set = subparsers.add_parser("set", add_help=False)
+        parser_set.add_argument("key")
+        parser_set.add_argument("value")
+        parser_set.set_defaults(handler=self.exec_set)
+
+        return parser
+
+    def exec_open(self, args: Namespace):
+        if self.last_hits is None:
+            print("nothing to open; search something first")
+            return
+
+        i: int = args.index - 1
+        try:
+            hit = self.last_hits[i]
+        except IndexError:
+            print("index out of bounds")
+            return
+
+        title = urllib.parse.quote(hit.document.page_title, safe="")
+        # TODO: fix
+        webbrowser.open(f"https://localhost/{title}")
+
+    def exec_set(self, args: Namespace):
+        if args.key == "limit":
+            try:
+                limit = int(args.value)
+            except ValueError:
+                print("limit must be a positive integer")
+                return
+
+            if limit < 1:
+                print("limit must be a positive integer")
+
+            self.limit = int(args.value)
+
+        else:
+            print(f"unrecognized key: {args.key}")
 
 
 def arg_parser():
