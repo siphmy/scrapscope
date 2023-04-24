@@ -24,7 +24,7 @@ def run_search(*, args: Namespace, db: index.Database, model: embedding.Model):
     idx = index.Index(project=args.project, db=db, model=model)
     idx.model.preload()
 
-    CliSearcher(idx=idx).run()
+    CliSearcher(idx=idx, project=args.project).run()
 
 
 def run_list(*, args: Namespace, db: index.Database, model: embedding.Model):
@@ -32,9 +32,14 @@ def run_list(*, args: Namespace, db: index.Database, model: embedding.Model):
         print(idx)
 
 
+def run_remote_set(*, args: Namespace, db: index.Database, model: embedding.Model):
+    config.set_remote(args.project, args.url)
+
+
 @dataclass
 class CliSearcher:
     idx: index.Index
+    project: str
 
     limit: int = config.default_limit
     last_hits: Optional[List[index.Hit]] = None
@@ -105,8 +110,8 @@ class CliSearcher:
             return
 
         title = urllib.parse.quote(hit.document.page_title, safe="")
-        # TODO: fix
-        webbrowser.open(f"https://localhost/{title}")
+        remote = config.get_remote(self.project)
+        webbrowser.open(f"{remote}/{title}")
 
     def exec_set(self, args: Namespace):
         if args.key == "limit":
@@ -157,6 +162,16 @@ def arg_parser():
         description="list projects",
     )
     parser_list.set_defaults(handler=run_list)
+
+    parser_remote = subparsers.add_parser("remote")
+    subparsers_remote = parser_remote.add_subparsers(required=True)
+    parser_remote_set = subparsers_remote.add_parser(
+        "set",
+        description="configure remote",
+    )
+    parser_remote_set.add_argument("project")
+    parser_remote_set.add_argument("url")
+    parser_remote_set.set_defaults(handler=run_remote_set)
 
     return parser
 
