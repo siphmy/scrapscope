@@ -6,7 +6,7 @@ from os import path
 from . import config, database, embedding, index, models, scrapbox
 
 
-def run_sync(*, args: Namespace, db: index.Database, model: embedding.Model):
+def run_import(*, args: Namespace, db: index.Database, model: embedding.Model):
     (project_name, _) = path.splitext(path.basename(args.file))
     idx = index.Index(project=project_name, db=db, model=model)
     project = scrapbox.Project(file=args.file)
@@ -44,18 +44,18 @@ def arg_parser():
     )
     subparsers = parser.add_subparsers(required=True)
 
-    parser_sync = subparsers.add_parser(
-        "sync",
-        description="sync index with scrapbox project",
+    parser_import = subparsers.add_parser(
+        "import",
+        description="import scrapbox project",
     )
-    parser_sync.add_argument("file")
-    parser_sync.add_argument(
+    parser_import.add_argument("file")
+    parser_import.add_argument(
         "-f",
         help="forces recalculation of embeddings",
         dest="force",
         action=argparse.BooleanOptionalAction,
     )
-    parser_sync.set_defaults(handler=run_sync)
+    parser_import.set_defaults(handler=run_import)
 
     parser_search = subparsers.add_parser(
         "search",
