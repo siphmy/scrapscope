@@ -22,7 +22,13 @@ class Database(Protocol):
     def indices(self) -> List[str]:
         ...
 
-    def query(self, *, index: str, vector: Vector) -> Iterator[Hit]:
+    def query(
+        self,
+        *,
+        index: str,
+        vector: Vector,
+        limit: Optional[int] = None,
+    ) -> Iterator[Hit]:
         ...
 
     def index(
@@ -61,9 +67,9 @@ class Index:
             documents=page_documents(project),
         )
 
-    def query(self, prompt: str) -> Iterator[Hit]:
+    def query(self, prompt: str, *, limit: Optional[int] = None) -> Iterator[Hit]:
         vector = next(self.model.encode([prompt]))
-        return self.db.query(index=self.project, vector=vector)
+        return self.db.query(index=self.project, vector=vector, limit=limit)
 
 
 def line_documents(project: scrapbox.Project) -> Iterator[Document]:

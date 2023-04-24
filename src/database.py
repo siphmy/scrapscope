@@ -1,12 +1,12 @@
 from dataclasses import asdict, dataclass
 from functools import cached_property
-from typing import Iterable, Iterator, List
+from typing import Iterable, Iterator, List, Optional
 
 from qdrant_client import QdrantClient
 from qdrant_client.conversions.common_types import ScoredPoint
 from qdrant_client.models import Distance, VectorParams
 
-from . import index
+from . import config, index
 from .models import Vector
 
 
@@ -24,11 +24,16 @@ class Qdrant:
         res = self.client.get_collections()
         return [c.name for c in res.collections]
 
-    def query(self, index: str, vector: Vector) -> Iterator[index.Hit]:
+    def query(
+        self,
+        index: str,
+        vector: Vector,
+        limit: Optional[int] = None,
+    ) -> Iterator[index.Hit]:
         hits = self.client.search(
             collection_name=index,
             query_vector=vector,
-            limit=5,
+            limit=limit if limit is not None else config.default_limit,
         )
 
         return map(hit_from_qdrant, hits)
