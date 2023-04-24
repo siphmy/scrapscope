@@ -7,15 +7,15 @@ from . import config, database, embedding, index, models, scrapbox
 
 
 def run_sync(*, args: Namespace, db: index.Database, model: embedding.Model):
-    (index_name, _) = path.splitext(path.basename(args.file))
-    idx = index.Index(name=index_name, db=db, model=model)
+    (project_name, _) = path.splitext(path.basename(args.file))
+    idx = index.Index(project=project_name, db=db, model=model)
     project = scrapbox.Project(file=args.file)
 
     idx.index(project, force=args.force)
 
 
 def run_search(*, args: Namespace, db: index.Database, model: embedding.Model):
-    idx = index.Index(name=args.index, db=db, model=model)
+    idx = index.Index(project=args.project, db=db, model=model)
     idx.model.preload()
 
     while True:
@@ -61,12 +61,12 @@ def arg_parser():
         "search",
         description="launch interactive prompt for searching pages",
     )
-    parser_search.add_argument("index")
+    parser_search.add_argument("project")
     parser_search.set_defaults(handler=run_search)
 
     parser_list = subparsers.add_parser(
         "list",
-        description="list indices",
+        description="list projects",
     )
     parser_list.set_defaults(handler=run_list)
 

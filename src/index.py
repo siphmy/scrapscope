@@ -42,28 +42,28 @@ class Database(Protocol):
 class Index:
     db: Database
     model: embedding.Model
-    name: str
+    project: str
 
     def index(self, project: scrapbox.Project, *, force=False):
-        self.db.reset(index=self.name, dimensions=self.model.dimensions)
+        self.db.reset(index=self.project, dimensions=self.model.dimensions)
 
         line_encoder = embedding.LineEncoder(model=self.model, project=project)
         self.db.index(
-            index=self.name,
+            index=self.project,
             vectors=line_encoder.encode(force=force),
             documents=line_documents(project),
         )
 
         page_encoder = embedding.PageEncoder(model=self.model, project=project)
         self.db.index(
-            index=self.name,
+            index=self.project,
             vectors=page_encoder.encode(force=force),
             documents=page_documents(project),
         )
 
     def query(self, prompt: str) -> Iterator[Hit]:
         vector = next(self.model.encode([prompt]))
-        return self.db.query(index=self.name, vector=vector)
+        return self.db.query(index=self.project, vector=vector)
 
 
 def line_documents(project: scrapbox.Project) -> Iterator[Document]:
